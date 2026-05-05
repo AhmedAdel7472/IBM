@@ -1,0 +1,376 @@
+% RC4 ENCODING AND DECODING
+
+function [out_txt, out_txtd] = RC4(data, key)
+
+lenp = length(data);
+lenk = length(key);
+
+S = 0:255;
+key = double(key);
+T = key(mod(0:255, lenk) + 1);
+
+% KSA
+j = 0;
+for i = 0:255
+    j = mod(j + S(i+1) + T(i+1), 256);
+    [S(i+1), S(j+1)] = deal(S(j+1), S(i+1));
+end
+
+% PRGA
+i = 0; j = 0;
+
+out_txt = char(zeros(1, lenp));
+out_txtd = zeros(1, lenp);
+
+for l = 1:lenp
+    i = mod(i + 1, 256);
+    j = mod(j + S(i+1), 256);
+
+    [S(i+1), S(j+1)] = deal(S(j+1), S(i+1));
+
+    t = mod(S(i+1) + S(j+1), 256);
+    k = S(t+1);
+
+    x = bitxor(k, double(data(l)));
+
+    out_txt(l) = char(x);
+    out_txtd(l) = x;
+end
+
+end
+
+cipher = RC4('HELLO', 'KEY');
+
+plain = RC4(cipher, 'KEY');
+
+
+
+
+plain = 'Hello World'  key = 'Security'   cipher = 'Â£ö%*Ïœ3a¥ò'
+txt = 'Hello World';
+key = 'Security';
+
+% Convert characters → ASCII numbers first
+k_ascii = double(key);
+d_ascii = double(txt);
+
+% Convert to binary properly
+k = reshape(dec2bin(k_ascii,8).'-'0',1,[]);
+d = reshape(dec2bin(d_ascii,8).'-'0',1,[]);
+
+% Split key (same logic)
+X = k(1:21);
+Y = k(22:42);
+Z = k(43:64);
+
+outb = zeros(1,length(d));
+
+for i = 1:length(d)
+
+    m = mode([X(end) Y(end) Z(end)]);
+
+    if X(end) == m
+        X = [xor(xor(xor(X(5),X(7)),X(10)),X(12)) X(1:end-1)];
+    end
+
+    if Y(end) == m
+        Y = [xor(Y(3),Y(8)) Y(1:end-1)];
+    end
+
+    if Z(end) == m
+        Z = [xor(xor(Z(2),Z(6)),Z(9)) Z(1:end-1)];
+    end
+
+    kbit = xor(xor(X(end),Y(end)),Z(end));
+    outb(i) = xor(d(i), kbit);
+end
+
+% Convert back to text
+outb = reshape(outb, 8, []).';
+out = char(bin2dec(num2str(outb)))';
+
+disp(out)
+
+
+
+% PLAYFAIR CIPHER
+
+%ENCODING
+
+plain='Balloon';
+key='monarchy';
+chars='a': 'z';
+
+
+key = lower(key);
+plain=lower(plain);
+
+% replace j with i
+for i=1: length(plain)
+    if plain(i)=='j'
+        plain(i)='i';  
+    end
+end
+
+
+
+
+% append letters to key
+for i=0: 25
+    if i~=('j'-'a')  % Fixed: correct comparison
+        key=[key char(i+'a')];
+    end
+end
+
+
+
+
+% change dimensions 
+key=unique(key, 'stable');
+vec=reshape(key, 5, 5)';
+
+
+
+
+
+
+
+
+% detect the chars and their position
+res='';
+i=1;
+
+while i<=length(plain)
+    a=plain(i);
+    b='x';  
+    
+    % Handle case where we're at the last character
+    if i==length(plain)
+        b='x';
+        i=i+1;
+    else
+        % Check if current and next characters are the same
+        if plain(i)==plain(i+1)
+            b='x';
+            i=i+1;
+        else
+            b=plain(i+1);
+            i=i+2;
+        end
+    end
+    
+    % Find positions in the matrix
+    [r1, c1]=find(vec==a);
+    [r2, c2]=find(vec==b);
+    
+    % Apply Playfair cipher rules
+    if r1==r2  % Same row
+        c1=mod(c1, 5)+1;  % Fixed: proper indexing (1-5 range)
+        c2=mod(c2, 5)+1;
+    elseif c1==c2  % Same column
+        r1=mod(r1, 5)+1;  % Fixed: proper indexing (1-5 range)
+        r2=mod(r2, 5)+1;
+    else  % Rectangle case
+        temp=c1;
+        c1=c2;
+        c2=temp;
+    end
+    
+    res=[res vec(r1, c1) vec(r2, c2)];  % Fixed: added semicolon
+end
+
+disp(res);
+
+
+
+
+%Decoding
+
+plain='Balloon';
+key='monarchy';
+chars='a': 'z';
+
+
+key = lower(key);
+plain=lower(plain);
+
+% replace j with i
+for i=1: length(plain)
+    if plain(i)=='j'
+        plain(i)='i';  
+    end
+end
+
+
+
+
+% append letters to key
+for i=0: 25
+    if i~=('j'-'a')  % Fixed: correct comparison
+        key=[key char(i+'a')];
+    end
+end
+
+
+
+
+% change dimensions 
+key=unique(key, 'stable');
+vec=reshape(key, 5, 5)';
+
+
+
+
+
+
+
+
+% detect the chars and their position
+res='';
+i=1;
+
+while i<=length(plain)
+    a=plain(i);
+    b='x';  
+    
+    % Handle case where we're at the last character
+    if i==length(plain)
+        b='x';
+        i=i+1;
+    else
+        % Check if current and next characters are the same
+        if plain(i)==plain(i+1)
+            b='x';
+            i=i+1;
+        else
+            b=plain(i+1);
+            i=i+2;
+        end
+    end
+    
+    % Find positions in the matrix
+    [r1, c1]=find(vec==a);
+    [r2, c2]=find(vec==b);
+    
+    % Apply Playfair cipher rules
+    if r1==r2  % Same row
+        c1=mod(c1-2, 5)+1;  % Fixed: proper indexing (1-5 range)
+        c2=mod(c2-2, 5)+1;
+    elseif c1==c2  % Same column
+        r1=mod(r1-2, 5)+1;  % Fixed: proper indexing (1-5 range)
+        r2=mod(r2-2, 5)+1;
+    else  % Rectangle case
+        temp=c1;
+        c1=c2;
+        c2=temp;
+    end
+    
+    res=[res vec(r1, c1) vec(r2, c2)];  % Fixed: added semicolon
+end
+
+disp(res);
+
+
+
+
+
+
+
+
+
+
+
+
+%rail_fence
+
+plain = 'HELLOWORLD'
+key = 3
+
+%encoding
+
+function res = enc(plain, key)
+plain = upper(plain(plain~=' '));
+n = length(plain);
+
+vec = repmat(' ', key, n);
+step = 1; now = 0;
+
+% Step 1: build zigzag
+for i = 1:n
+    now = now + step;
+    vec(now, i) = '*';   % mark positions
+    if now == key, step = -1; end
+    if now == 1, step = 1; end
+    if key == 1, step = 0; end
+end
+
+% Step 2: fill matrix
+cnt = 1;
+for i = 1:key
+    for j = 1:n
+        if vec(i,j) == '*'
+            vec(i,j) = plain(cnt);
+            cnt = cnt + 1;
+        end
+    end
+end
+
+% Step 3: read row-wise
+res = '';
+for i = 1:key
+    for j = 1:n
+        if vec(i,j) ~= ' '
+            res = [res vec(i,j)];
+        end
+    end
+end
+end
+
+%decoding
+
+function res = enc(plain, key)
+plain = upper(plain(plain~=' '));
+n = length(plain);
+
+vec = repmat(' ', key, n);
+step = 1; now = 0;
+
+% Step 1: build zigzag
+for i = 1:n
+    now = now + step;
+    vec(now, i) = '*';   % mark positions
+    if now == key, step = -1; end
+    if now == 1, step = 1; end
+    if key == 1, step = 0; end
+end
+
+% Step 2: fill matrix
+cnt = 1;
+for i = 1:key
+    for j = 1:n
+        if vec(i,j) == '*'
+            vec(i,j) = plain(cnt);
+            cnt = cnt + 1;
+        end
+    end
+end
+
+% Step 3: read row-wise
+res = '';
+for j = 1:n
+    for i = 1:key
+        if vec(i,j) ~= ' '
+            res = [res vec(i,j)];
+        end
+    end
+end
+end
+
+
+
+
+
+
+
+
+  
